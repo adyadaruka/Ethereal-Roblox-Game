@@ -1,0 +1,31 @@
+local players = game:GetService("Players")
+
+local player = players.LocalPlayer
+local mouse = player:GetMouse()
+
+local mannequins = require(script:WaitForChild("Mannequins"))
+local viewer = require(script:WaitForChild("Viewer"))
+
+local function loadMannequins()
+	for i, object in ipairs(workspace:GetDescendants()) do
+		if object:IsA("Model") and object.Name == "Mannequin 5" then
+			mannequins.new(object)
+		end
+	end
+end
+
+local function clicked()
+	local target = mouse.Target
+	
+	if not target then return end
+	
+	local mannequin = mannequins.getMannequinFromTarget(target)
+	
+	if mannequin then
+		viewer:show(mannequin)
+	end
+end
+
+loadMannequins()
+
+mouse.Button1Down:Connect(clicked)
