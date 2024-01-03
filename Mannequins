@@ -1,0 +1,37 @@
+local mannequins = {}
+mannequins.__index = mannequins
+
+function mannequins.new(model)
+	local self = {
+		model = model,
+		clothing = {},
+	}
+	
+	setmetatable(self, mannequins)
+	
+	table.insert(mannequins, self)
+	
+	self:init()
+	
+	return self
+end
+
+function mannequins.getMannequinFromTarget(target)
+	for i, mannequin in ipairs(mannequins) do
+		if target:IsDescendantOf(mannequin.model) then
+			return mannequin
+		end
+	end
+end
+
+function mannequins:init()
+	for i, object in ipairs(self.model:GetDescendants()) do
+		if not object:IsA("Clothing") or not object:FindFirstChild("ID") then continue end
+		
+		local template = object[object.ClassName.."Template"]
+		
+		self.clothing[object.ClassName] = { template = template, assetId = string.match(template, "%d+"), productId = object.ID.Value }
+	end
+end
+
+return mannequins
