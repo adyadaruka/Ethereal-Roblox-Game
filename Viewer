@@ -1,0 +1,149 @@
+local viewer = {}
+
+local replicatedStorage = game:GetService("ReplicatedStorage")
+local marketplace = game:GetService("MarketplaceService")
+local players = game:GetService("Players")
+
+local player = players.LocalPlayer
+
+local library = require(replicatedStorage:WaitForChild("Library"))
+local tween = library.Tween
+
+local viewerRunner = script.Parent
+
+local gui = viewerRunner.Parent
+
+viewer.frame = gui.Viewer
+
+viewer.frame.Position = UDim2.new(.5, 0, -.5, 0)
+viewer.frame.Visible = true
+
+local viewport = viewer.frame.Viewport
+
+local info = { time = .75, direction = tween.direction.onlyOut }
+
+function viewer:show(mannequin)
+	if not mannequin then return end
+	
+	viewer.current = mannequin
+	
+	if mannequin.clothing.Shirt then
+		viewer.frame.BuyShirt.Visible = true
+		viewer.frame.TryShirt.Visible = true
+		
+		viewport.Character.Shirt.ShirtTemplate = mannequin.clothing.Shirt.template
+		
+		if not mannequin.clothing.Pants then
+			viewer.frame.BuyShirt.Position = UDim2.new(.5, 0, viewer.frame.BuyShirt.Position.Y.Scale, 0)
+			viewer.frame.TryShirt.Position = UDim2.new(.5, 0, viewer.frame.TryShirt.Position.Y.Scale, 0)
+		else
+			viewer.frame.BuyShirt.Position = UDim2.new(.225, 0, viewer.frame.BuyShirt.Position.Y.Scale, 0)
+			viewer.frame.TryShirt.Position = UDim2.new(.225, 0, viewer.frame.TryShirt.Position.Y.Scale, 0)
+		end
+	else
+		viewport.Character.Shirt.ShirtTemplate = ""
+		
+		viewer.frame.BuyShirt.Visible = false
+		viewer.frame.TryShirt.Visible = false
+	end
+	
+	if mannequin.clothing.Pants then
+		viewer.frame.BuyPants.Visible = true
+		viewer.frame.TryPants.Visible = true
+		
+		viewport.Character.Pants.PantsTemplate = mannequin.clothing.Pants.template
+
+		if not mannequin.clothing.Shirt then
+			viewer.frame.BuyPants.Position = UDim2.new(.5, 0, viewer.frame.BuyPants.Position.Y.Scale, 0)
+			viewer.frame.TryPants.Position = UDim2.new(.5, 0, viewer.frame.TryPants.Position.Y.Scale, 0)
+		else
+			viewer.frame.BuyPants.Position = UDim2.new(.775, 0, viewer.frame.BuyPants.Position.Y.Scale, 0)
+			viewer.frame.TryPants.Position = UDim2.new(.775, 0, viewer.frame.TryPants.Position.Y.Scale, 0)
+		end
+	else
+		viewport.Character.Pants.PantsTemplate = ""
+		
+		viewer.frame.BuyPants.Visible = false
+		viewer.frame.TryPants.Visible = false
+	end
+	
+	viewer:open()
+end
+
+function viewer:open()
+	tween(viewer.frame, { Position = UDim2.new(.5, 0, .5, 0) }, info)
+end
+
+function viewer:close()
+	tween(viewer.frame, { Position = UDim2.new(.5, 0, -.5, 0) }, info)
+end
+
+function viewer:try(type)
+	if not player.Character then return end
+	
+	local clothing = player.Character:FindFirstChildOfClass(type) or Instance.new(type)
+	clothing.Name = type
+	clothing[clothing.ClassName.."Template"] = viewer.current.clothing[type].template
+	clothing.Parent = player.Character
+	
+	viewer:close()
+end
+
+function viewer:buy(type)
+	marketplace:PromptPurchase(player, viewer.current.clothing[type].productId, false)
+end
+
+local function setup()
+	viewport:WaitForChild("Character")
+	
+	viewport.Character.PrimaryPart = viewport.Character:WaitForChild("HumanoidRootPart")
+	
+	local camera = Instance.new("Camera")
+	camera.FieldOfView = 70
+	camera.CFrame = viewport.Character:GetPrimaryPartCFrame() * CFrame.new(0, 1, 5) * CFrame.Angles(math.rad(-10), 0, 0)
+	camera.Parent = viewport
+	
+	viewport.CurrentCamera = camera
+	
+	local function tryShirt()
+		viewer:try("Shirt")
+	end
+	
+	local function tryPants()
+		viewer:try("Pants")
+	end
+	
+	local function buyShirt()
+		viewer:buy("Shirt")
+	end
+	
+	local function buyPants()
+		viewer:buy("Pants")
+	end
+	
+	viewer.frame.TryShirt.MouseButton1Click:Connect(tryShirt)
+	viewer.frame.TryPants.MouseButton1Click:Connect(tryPants)
+	
+	viewer.frame.BuyShirt.MouseButton1Click:Connect(buyShirt)
+	viewer.frame.BuyPants.MouseButton1Click:Connect(buyPants)
+	
+	coroutine.wrap(function()
+		local i = 0
+		
+		while wait() do
+			i += 1
+			
+			viewport.Character:SetPrimaryPartCFrame(CFrame.new(viewport.Character.PrimaryPart.Position) * CFrame.Angles(0, math.rad(i), 0))
+			
+			if i >= 360 then
+				i = 0
+			end
+		end
+	end)()
+end
+
+setup()
+
+viewer.frame.Close.MouseButton1Click:Connect(viewer.close)
+
+return viewer
