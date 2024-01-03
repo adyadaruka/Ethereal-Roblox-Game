@@ -1,0 +1,27 @@
+local marketplace = game:GetService("MarketplaceService")
+
+local cache = {}
+
+local function getProductInfo(assetId, notCache, infoType)
+	if not notCache and cache[assetId] then
+		return cache[assetId]
+	end
+	
+	local function get()
+		return marketplace:GetProductInfo(assetId, infoType or Enum.InfoType.Asset)
+	end
+	
+	local success, result = pcall(get)
+	
+	if success then
+		cache[assetId] = result
+		
+		return result or {}
+	else
+		wait(5)
+		
+		return getProductInfo(assetId, infoType)
+	end
+end
+
+return getProductInfo
