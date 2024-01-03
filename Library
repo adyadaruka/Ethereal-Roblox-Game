@@ -1,0 +1,11 @@
+local library = {}
+
+for i, object in ipairs(script:GetChildren()) do
+	local module = require(object)
+	
+	if module then
+		library[object.Name] = module
+	end
+end
+
+return library
