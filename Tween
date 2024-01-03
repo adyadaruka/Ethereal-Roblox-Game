@@ -1,0 +1,77 @@
+local tween = {}
+tween.__index = tween
+
+local tweenService = game:GetService("TweenService")
+
+local styles = Enum.EasingStyle
+local directions = Enum.EasingDirection
+
+tween.style = {
+	quad = styles.Quad,
+	quint = styles.Quint,
+	cubic = styles.Cubic,
+	linear = styles.Linear,
+	bounce = styles.Bounce,
+}
+
+tween.direction = {
+	onlyIn = directions.In,
+	onlyOut = directions.Out,
+	inOut = directions.InOut,
+}
+
+function tween.new(_, objects, properties, info)
+	local self = {
+		info = info,
+		objects = objects,
+		properties = properties,
+		tweens = {},
+	}
+	
+	setmetatable(self, tween)
+	
+	if typeof(objects) == "Instance" then
+		self.objects = { objects }
+	end
+	
+	self:init()
+	self:play()
+	
+	return self
+end
+
+function tween:init()
+	local info = self.info
+	
+	assert(info.time, "A time is required to tween.")
+	
+	self.tweenInfo = TweenInfo.new(info.time, info.style or tween.style.quint, info.direction or tween.direction.inOut, info.repeatCount or 0, info.reverses or false, info.delay or 0)
+end
+
+function tween:create(object)
+	return tweenService:Create(object, self.tweenInfo, self.properties)
+end
+
+function tween:play()
+	for i, object in ipairs(self.objects) do
+		local tween = self:create(object)
+		
+		table.insert(self.tweens, tween)
+		
+		tween:Play()
+	end
+end
+
+function tween:cancel()
+	for i, tween in ipairs(self.tweens) do
+		tween:Cancel()
+	end
+end
+
+local metatable = {
+	__call = tween.new,
+}
+
+setmetatable(tween, metatable)
+
+return tween
